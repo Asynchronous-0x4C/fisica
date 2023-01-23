@@ -69,8 +69,8 @@ import org.jbox2d.dynamics.joints.*;
  * @see FLine
  */
 public class FBlob extends FBody {
-  protected ArrayList m_vertices;  // in world coords
-  protected ArrayList m_vertexBodies;  // in world coords
+  protected ArrayList<Vec2> m_vertices;  // in world coords
+  protected ArrayList<FBody> m_vertexBodies;  // in world coords
   protected float m_damping = 0.0f;
   protected float m_frequency = 0.0f;
   protected float m_vertexSize = 0.4f;  // in world coords
@@ -90,8 +90,8 @@ public class FBlob extends FBody {
   public FBlob() {
     super();
 
-    m_vertices = new ArrayList();
-    m_vertexBodies = new ArrayList();
+    m_vertices = new ArrayList<>();
+    m_vertexBodies = new ArrayList<>();
   }
 
   public void addToWorld(FWorld world) {
@@ -103,8 +103,8 @@ public class FBlob extends FBody {
 
     // Create bodies from the vertices and add them to the
     // constant volume joint that we just created
-    for (int i=0; i<m_vertices.size(); i++) {
-      Vec2 p = Fisica.worldToScreen((Vec2)m_vertices.get(i));
+    for (Vec2 v:m_vertices) {
+      Vec2 p = Fisica.worldToScreen(v);
       FBody fb = new FCircle(getVertexSize());
       fb.setPosition(p.x, p.y);
       fb.setDensity(m_density);
@@ -117,8 +117,7 @@ public class FBlob extends FBody {
       m_vertexBodies.add(fb);
     }
 
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      FBody fb = (FBody)m_vertexBodies.get(i);
+    for (FBody fb:m_vertexBodies) {
       fb.setDrawable(false);
       fb.setParent(this);
       fb.setRotatable(false);
@@ -140,8 +139,8 @@ public class FBlob extends FBody {
     m_joint.removeFromWorld();
 
     // Remove the vertex bodies
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)(m_vertexBodies.get(i))).removeFromWorld();
+    for (FBody fb:m_vertexBodies) {
+      fb.removeFromWorld();
     }
   }
 
@@ -171,7 +170,7 @@ public class FBlob extends FBody {
    * @return  the x coordinate of the vertex to retrieve
    */
   public float getVertexX(int i){
-    return Fisica.worldToScreen((Vec2)m_vertices.get(i)).x;
+    return Fisica.worldToScreen(m_vertices.get(i)).x;
   }
 
   /**
@@ -181,7 +180,7 @@ public class FBlob extends FBody {
    * @return  the y coordinate of the vertex to retrieve
    */
   public float getVertexY(int i){
-    return Fisica.worldToScreen((Vec2)m_vertices.get(i)).y;
+    return Fisica.worldToScreen(m_vertices.get(i)).y;
   }
 
   /**
@@ -197,9 +196,9 @@ public class FBlob extends FBody {
     m_vertices.clear();
 
     for (int i=0; i<vertexCount; i++) {
-      float angle = Fisica.parent().map(i, 0, vertexCount, 0, Fisica.parent().TWO_PI);
-      float vx = x + size/2 * Fisica.parent().sin(angle);
-      float vy = y + size/2 * Fisica.parent().cos(angle);
+      float angle = PApplet.map(i, 0, vertexCount, 0, PApplet.TWO_PI);
+      float vx = x + size/2 * PApplet.sin(angle);
+      float vy = y + size/2 * PApplet.cos(angle);
 
       this.vertex(vx, vy);
     }
@@ -258,7 +257,7 @@ public class FBlob extends FBody {
    *
    * @return list of vertex bodies
    */
-  public ArrayList getVertexBodies() {
+  public ArrayList<FBody> getVertexBodies() {
     return m_vertexBodies;
   }       
 
@@ -289,49 +288,37 @@ public class FBlob extends FBody {
   }
 
   public void addForce(float fx, float fy) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).addForce(fx, fy);
-    }
+    m_vertexBodies.forEach(b->b.addForce(fx, fy));
 
     m_force.add(Fisica.screenToWorld(fx, fy));
   }
 
   public void addTorque(float t) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).addTorque(t);
-    }
+    m_vertexBodies.forEach(b->b.addTorque(t));
 
     m_torque += t;
   }
 
   public void setDensity(float d) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).setDensity(d);
-    }
+    m_vertexBodies.forEach(b->b.setDensity(d));
 
     m_density = d;
   }
 
   public void setFriction(float d) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).setFriction(d);
-    }
+    m_vertexBodies.forEach(b->b.setFriction(d));
 
     m_friction = d;
   }
 
   public void setRestitution(float d) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).setRestitution(d);
-    }
+    m_vertexBodies.forEach(b->b.setRestitution(d));
 
     m_restitution = d;
   }
 
   public void setBullet(boolean d) {
-    for (int i=0; i<m_vertexBodies.size(); i++) {
-      ((FBody)m_vertexBodies.get(i)).setBullet(d);
-    }
+    m_vertexBodies.forEach(b->b.setBullet(d));
 
     m_bullet = d;
   }

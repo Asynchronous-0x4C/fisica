@@ -5,6 +5,7 @@ TODO:
   - Make GearJoint use the getDynamicBody()
 + Revolute and Prismatic (and maybe others) joints can both inherit from a BiBodyJoint
 + Optimize by avoid creation of extra Vec2 instances
++ add functional interface to Shape and call
 
 DONE:
 + Use the ViewportTransform provided by jBox2D

@@ -1,15 +1,15 @@
 COPYRIGHT
 ---------------
-Copyright 2009-2010 Ricard Marxer <email@ricardmarxer.com>
+Copyright 2009-2010 Ricard Marxer <email@ricardmarxer.com><br>
 This software is licensed as GNU LGPL v3 or later.  See COPYING and COPYING.LESSER
-for the details of the license.
-This product includes the software JBox2D. (http://www.jbox2d.org/).
+for the details of the license.<br>
+This product includes the software [**JBox2D**](http://www.jbox2d.org/).<br>
 
 INSTALL
 ---------------
 Unzip the fisica-XX.zip in the Processing libraries directory.
-The result shoul look like this:
-/path/to/processing/libraries/fisica/library/fisica.jar
+The result shoul look like this:<br>
+`/path/to/processing/libraries/fisica/library/fisica.jar`
 
 USAGE
 ---------------

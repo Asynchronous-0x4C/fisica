@@ -34,7 +34,7 @@ import org.jbox2d.dynamics.joints.*;
  *
  */
 public class FConstantVolumeJoint extends FJoint {
-  protected ArrayList m_bodies;
+  protected ArrayList<FBody> m_bodies;
   protected float m_damping = 0.0f;
   protected float m_frequency = 0.0f;
 
@@ -43,12 +43,9 @@ public class FConstantVolumeJoint extends FJoint {
     md.frequencyHz = m_frequency;
     md.dampingRatio = m_damping;
 
-    for (int i=0; i<m_bodies.size(); i++) {
-      Body b = ((FBody)m_bodies.get(i)).m_body;
-      if (b != null) {
-        md.addBody(b);
-      }
-    }
+    m_bodies.forEach(b->{
+      if(b.m_body!=null)md.addBody(b.m_body);
+    });
 
     return md;
   }
@@ -59,7 +56,7 @@ public class FConstantVolumeJoint extends FJoint {
   public FConstantVolumeJoint() {
     super();
 
-    m_bodies = new ArrayList();
+    m_bodies = new ArrayList<>();
   }
 
   /**
@@ -77,7 +74,7 @@ public class FConstantVolumeJoint extends FJoint {
    * @return   list of bodies (ArrayList of FBody) connected by the joint
    *
    */
-  public ArrayList getBodies() {
+  public ArrayList<FBody> getBodies() {
     return m_bodies;
   }
 
@@ -112,10 +109,10 @@ public class FConstantVolumeJoint extends FJoint {
     int i;
     for (i=0; i<m_bodies.size()-1; ++i)
     {
-        x0 = ((FBody)m_bodies.get(i)).getX();
-        y0 = ((FBody)m_bodies.get(i)).getY();
-        x1 = ((FBody)m_bodies.get(i+1)).getX();
-        y1 = ((FBody)m_bodies.get(i+1)).getY();
+        x0 = m_bodies.get(i).getX();
+        y0 = m_bodies.get(i).getY();
+        x1 = m_bodies.get(i+1).getX();
+        y1 = m_bodies.get(i+1).getY();
         a = x0*y1 - x1*y0;
         signedArea += a;
         centroid.x += (x0 + x1)*a;
@@ -123,10 +120,10 @@ public class FConstantVolumeJoint extends FJoint {
     }
 
     // Do last vertex
-    x0 = ((FBody)m_bodies.get(i)).getX();
-    y0 = ((FBody)m_bodies.get(i)).getY();
-    x1 = ((FBody)m_bodies.get(0)).getX();
-    y1 = ((FBody)m_bodies.get(0)).getY();
+    x0 = m_bodies.get(i).getX();
+    y0 = m_bodies.get(i).getY();
+    x1 = m_bodies.get(0).getX();
+    y1 = m_bodies.get(0).getY();
     a = x0*y1 - x1*y0;
     signedArea += a;
     centroid.x += (x0 + x1)*a;
@@ -151,10 +148,8 @@ public class FConstantVolumeJoint extends FJoint {
     } else {
       if (m_bodies.size()>0) {
         applet.beginShape();
-        for (int i=0; i<m_bodies.size(); i++) {
-          applet.vertex(((FBody)m_bodies.get(i)).getX(), ((FBody)m_bodies.get(i)).getY());
-        }
-        applet.endShape(applet.CLOSE);
+        m_bodies.forEach(b->applet.vertex(b.getX(),b.getY()));
+        applet.endShape(PApplet.CLOSE);
       }
     }
 
@@ -166,14 +161,10 @@ public class FConstantVolumeJoint extends FJoint {
 
     if (m_bodies.size()>0) {
       applet.beginShape();
-      for (int i=0; i<m_bodies.size(); i++) {
-        applet.vertex(((FBody)m_bodies.get(i)).getX(), ((FBody)m_bodies.get(i)).getY());
-      }
-      applet.endShape(applet.CLOSE);
+      m_bodies.forEach(b->applet.vertex(b.getX(),b.getY()));
+      applet.endShape(PApplet.CLOSE);
       
-      for (int i=0; i<m_bodies.size(); i++) {
-        applet.ellipse(((FBody)m_bodies.get(i)).getX(), ((FBody)m_bodies.get(i)).getY(), 5, 5);
-      }
+      m_bodies.forEach(b->applet.ellipse(b.getX(),b.getY(),5,5));
     }
 
     postDrawDebug(applet);
