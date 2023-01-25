@@ -1,13 +1,15 @@
 TODO:
-+ Add getJoints() on FBody
 + Check which properties can and which cannot be changed once added to the world (make it transparent to the user)
 + Add a getStaticBody()/getDynamicBody() to Revolute and Prismatic joints
   - Make GearJoint use the getDynamicBody()
 + Revolute and Prismatic (and maybe others) joints can both inherit from a BiBodyJoint
 + Optimize by avoid creation of extra Vec2 instances
 + add functional interface to Shape and call
++ Shape->Fixture
++ add addAngularImpulse
 
 DONE:
++ Add getJoints() on FBody
 + Use the ViewportTransform provided by jBox2D
 + Fix the tracking of Contacts
   - Keep copies of the contacts in the World
