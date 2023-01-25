@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="4b10f2fc-213b-4717-b666-f05deefdec94" name="変更" comment="" />
+    <list default="true" id="4b10f2fc-213b-4717-b666-f05deefdec94" name="変更" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TODO" beforeDir="false" afterPath="$PROJECT_DIR$/TODO" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FBlob.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FBlob.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FBody.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FBody.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FBox.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FBox.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FCircle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FCircle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FCompound.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FCompound.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FConstantVolumeJoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FConstantVolumeJoint.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FLine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FLine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FPoly.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FPoly.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fisica/FWorld.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/fisica/FWorld.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -10,21 +23,24 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="2KizeQFpvLv2AATVf1Q2dKxKHeC" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "G:/projects/fisica/libs/jbox2d-library-2.3.1-SNAPSHOT.jar",
-    "project.structure.last.edited": "プロジェクト",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;G:/projects/fisica&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;モジュール&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="アプリケーションレベル" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="デフォルトタスク">

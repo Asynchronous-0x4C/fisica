@@ -31,6 +31,7 @@ import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.contacts.*;
 import org.jbox2d.dynamics.joints.*;
+import org.jbox2d.callbacks.*;
 
 import processing.core.*;
 
@@ -114,12 +115,12 @@ public class FWorld extends World {
   protected float m_grabPositionX = 0.0f;
   protected float m_grabPositionY = 0.0f;
   protected int m_mouseButton = PConstants.LEFT;
-  protected HashMap m_contacts;
-  protected ArrayList m_contactResults;
+  protected HashMap<FContactID,FContact> m_contacts;
+  protected ArrayList<FContactResult> m_contactResults;
 
-  protected LinkedList m_actions;
+  protected LinkedList<FWorldAction> m_actions;
 
-  protected ArrayList m_fbodies = new ArrayList();
+  protected ArrayList<FBody> m_fbodies = new ArrayList<>();
 
   protected FMouseJoint m_mouseJoint = new FMouseJoint((FBody)null, 0.0f, 0.0f);
 
@@ -352,7 +353,7 @@ public class FWorld extends World {
    */
   public void mouseEvent(MouseEvent event){
     // mousePressed
-    if (event.getAction() == event.PRESS
+    if (event.getAction() == MouseEvent.PRESS
         && event.getButton() == m_mouseButton) {
       
       grabBody(event.getX(), event.getY());
@@ -360,7 +361,7 @@ public class FWorld extends World {
     }
 
     // mouseReleased
-    if (event.getAction()  == event.RELEASE
+    if (event.getAction()  == MouseEvent.RELEASE
         && event.getButton() == m_mouseButton) {
         
       releaseBody();
@@ -368,7 +369,7 @@ public class FWorld extends World {
     }
 
     // mouseDragged
-    if (event.getAction()  == event.DRAG) {
+    if (event.getAction()  == MouseEvent.DRAG) {
     
       dragBody(event.getX(), event.getY());
       // TODO: send a bodyDragged(FBody body) event
@@ -399,12 +400,7 @@ public class FWorld extends World {
    * @see FBody
    */
   public FWorld(float topLeftX, float topLeftY, float bottomRightX, float bottomRightY) {
-    super(new AABB(Fisica.screenToWorld(new Vec2(topLeftX,
-                                                 topLeftY)),
-                   Fisica.screenToWorld(new Vec2(bottomRightX,
-                                                 bottomRightY))),
-          Fisica.screenToWorld(new Vec2(0.0f, 10.0f)),                  // gravity vertical downwards 10 m/s^2
-          true);                                   // allow sleeping bodies
+    super(Fisica.screenToWorld(new Vec2(0.0f, 10.0f)));
 
     m_topLeftX = topLeftX;
     m_topLeftY = topLeftY;
@@ -412,7 +408,7 @@ public class FWorld extends World {
     m_bottomRightY = bottomRightY;
 
     super.setWarmStarting( true );
-    super.setPositionCorrection( true );
+    //super.setPositionCorrection( true ); 
     super.setContinuousPhysics( true );
 
     //Fisica.parent().registerMouseEvent(this);
@@ -457,10 +453,10 @@ public class FWorld extends World {
     m_contactListener.m_world = this;
     setContactListener(m_contactListener);
 
-    m_contacts = new HashMap();
-    m_contactResults = new ArrayList();
+    m_contacts = new HashMap<>();
+    m_contactResults = new ArrayList<>();
     
-    m_actions = new LinkedList();
+    m_actions = new LinkedList<>();
 
     m_mouseJoint.setDrawable(false);
 
@@ -844,7 +840,23 @@ public class FWorld extends World {
     //m_contacts.clear();
     m_contactResults.clear();
 
-    super.step( dt, iterationCount );
+    super.step( dt, iterationCount, iterationCount );
+  }
+
+  /**
+   * Advance the world simulation of given time, with a given number of iterations.  The larger the number of iterations, the more computationally expensive and precise it will be.  The default is 10 iterations.
+   *
+   * @param dt   the time to advance the world simulation
+   * @param velocityIterationCount   the number of iterations for the world simulation step (velocity)
+   * @param positionIterationCount   the number of iterations for the world simulation step (position)
+   */
+  public void step( float dt, int velocityIterationCount, int positionIterationCount) {
+    processActions();
+    
+    //m_contacts.clear();
+    m_contactResults.clear();
+
+    super.step( dt, velocityIterationCount, positionIterationCount );
   }
 
   /**
@@ -867,7 +879,7 @@ public class FWorld extends World {
    * @return    the body found at the given position
    */
   public FBody getBody( float x, float y, boolean getStatic ) {
-    ArrayList bodies = this.getBodies(x, y, getStatic);
+    ArrayList<FBody> bodies = this.getBodies(x, y, getStatic);
     if (bodies.size() == 0) return null;
 
     return (FBody)bodies.get(0);
@@ -878,8 +890,8 @@ public class FWorld extends World {
    *
    * @return    an ArrayList (of FBody) of the bodies in the world
    */
-  public ArrayList getBodies() {
-      ArrayList result = new ArrayList();
+  public ArrayList<FBody> getBodies() {
+      ArrayList<FBody> result = new ArrayList<>();
 
       for (Body b = getBodyList(); b != null; b = b.m_next) {
 	  FBody fb = (FBody)(b.m_userData);
@@ -898,7 +910,7 @@ public class FWorld extends World {
    * @param y   the vertical component of the position
    * @return    an ArrayList (of FBody) of the 10 first bodies found at the given position
    */
-  public ArrayList getBodies( float x, float y ) {
+  public ArrayList<FBody> getBodies( float x, float y ) {
     return this.getBodies(x, y, true);
   }
 
@@ -910,7 +922,7 @@ public class FWorld extends World {
    * @param getStatic   if {@code true} it will also get static objects that can be found at that position
    * @return    an ArrayList (of FBody) of the 10 first bodies found at the given position
    */
-  public ArrayList getBodies( float x, float y, boolean getStatic ) {
+  public ArrayList<FBody> getBodies( float x, float y, boolean getStatic ) {
     return this.getBodies(x, y, getStatic, 10);
   }
 
@@ -923,7 +935,12 @@ public class FWorld extends World {
    * @param count   the maximum number of bodies to be retrieved
    * @return    an ArrayList (of FBody) of all bodies found at the given position
    */
-  public ArrayList getBodies( float x, float y, boolean getStatic, int count ) {
+
+  public ArrayList<FBody> getBodies( float x, float y, boolean getStatic, int count ) {
+    ArrayList<FBody> result = new ArrayList<>();
+
+    if (count <= 0) return result;
+
     // Make a small box.
     Vec2 p = Fisica.screenToWorld(x, y);
 
@@ -933,17 +950,14 @@ public class FWorld extends World {
     m_aabb.upperBound.addLocal(m_small);
 
     // Query the world for overlapping shapes.
-    Shape shapes[] = this.query(m_aabb, count);
+    ArrayList<Fixture>fixtures=new ArrayList<>();
+    // Count and add shapes.
+    this.queryAABB((f)->{fixtures.add(f);return fixtures.size()<count;},(i)->{return true;},m_aabb);
 
-    ArrayList result = new ArrayList();
-
-    if (shapes == null) return result;
-
-    for (int j = 0; j < shapes.length; j++) {
-      Body shapeBody = shapes[j].getBody();
-      if (shapeBody.isStatic() == false || getStatic) {
-        boolean inside = shapes[j].testPoint(shapeBody.getMemberXForm(), p);
-        if (inside) {
+    for(Fixture f:fixtures){
+      Body shapeBody = f.getBody();
+      if(shapeBody.getType() != BodyType.STATIC || getStatic){
+        if(f.getShape().testPoint(shapeBody.getTransform(),p)){
           result.add((FBody)(shapeBody.getUserData()));
         }
       }
@@ -952,6 +966,7 @@ public class FWorld extends World {
     return result;
   }
   
+  @Deprecated
   public int raycast(float x1, float y1, float x2, float y2, FBody[] bodies, int maxCount, boolean solidShapes) {
     Segment segment = new Segment();
     segment.p1.set(Fisica.screenToWorld(x1, y1));
@@ -971,6 +986,7 @@ public class FWorld extends World {
     return count;
   }
 
+  @Deprecated
   public FBody raycastOne(float x1, float y1, float x2, float y2, FRaycastResult result, boolean solidShapes) {
     Segment segment = new Segment();
     segment.p1.set(Fisica.screenToWorld(x1, y1));
@@ -989,12 +1005,16 @@ public class FWorld extends World {
     RaycastResult temp = new RaycastResult();
 
     //Redundantly do TestSegment a second time, as the previous one's results are inaccessible
-    shapes[0].testSegment(shapes[0].getBody().getMemberXForm(), temp, segment, 1.0f);
+    shapes[0].testSegment(shapes[0].getBody().getTransform(), temp, segment, 1.0f);
 
     result.set(x1, y1, x2, y2, temp);
 
     //We already know it returns true
     return (FBody)(shapes[0].getBody().getUserData());
+  }
+
+  public void raycast(RayCastCallback rc,ParticleRaycastCallback pc,float x1, float y1, float x2, float y2){
+    this.raycast(rc, pc, Fisica.screenToWorld(x1, y1), Fisica.screenToWorld(x2, y2));
   }
 
 }

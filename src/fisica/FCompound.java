@@ -19,10 +19,10 @@ public class FCompound extends FBody {
     m_shapes = new ArrayList();
   }
 
-  public ArrayList getShapeDefs() {
+  public ArrayList getFixtureDefs() {
     ArrayList result = new ArrayList();
     for (int i=0; i<m_shapes.size(); i++) {
-      ShapeDef sd = (ShapeDef)(((FBody)m_shapes.get(i)).getTransformedShapeDef());
+      ShapeDef sd = (ShapeDef)(((FBody)m_shapes.get(i)).getTransformedFixtureDef());
       sd = ((FBody)m_shapes.get(i)).processShapeDef(sd);
       result.add(sd);
     }

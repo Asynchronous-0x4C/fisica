@@ -91,7 +91,7 @@ public class FPoly extends FBody {
     Polygon.decomposeConvexAndAddTo(m_polygon, bd, (PolygonDef)sd);
   }
 
-  protected ShapeDef getShapeDef() {
+  protected ShapeDef getFixtureDef() {
     PolygonDef pd = new PolygonDef();
     
     m_vertices.add(new Vec2((Vec2)m_vertices.get(m_vertices.size()-1)));
@@ -108,8 +108,8 @@ public class FPoly extends FBody {
     return pd;
   }
   
-  protected ShapeDef getTransformedShapeDef() {
-    PolygonDef pd = (PolygonDef)getShapeDef();
+  protected ShapeDef getTransformedFixtureDef() {
+    PolygonDef pd = (PolygonDef)getFixtureDef();
 
     XForm xf = new XForm();
     xf.R.set(-m_angle);

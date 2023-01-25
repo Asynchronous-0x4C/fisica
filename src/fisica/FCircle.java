@@ -44,7 +44,7 @@ import processing.core.*;
 public class FCircle extends FBody {
   protected float m_size;
 
-  protected ShapeDef getShapeDef() {
+  protected ShapeDef getFixtureDef() {
     CircleDef pd = new CircleDef();
     pd.radius = m_size/2.0f;
     pd.density = m_density;
@@ -54,8 +54,8 @@ public class FCircle extends FBody {
     return pd;
   }
 
-  protected ShapeDef getTransformedShapeDef() {
-    CircleDef pd = (CircleDef)getShapeDef();
+  protected ShapeDef getTransformedFixtureDef() {
+    CircleDef pd = (CircleDef)getFixtureDef();
     pd.localPosition.set(m_position);
     return pd;
   }

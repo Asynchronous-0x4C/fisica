@@ -19,8 +19,6 @@
 
 package fisica;
 
-import java.util.Iterator;
-import java.util.Collection;
 import java.util.ArrayList;
 
 import org.jbox2d.common.*;
@@ -73,11 +71,11 @@ public abstract class FBody extends FDrawable {
 
   protected boolean m_grabbable = true;
 
-  protected Shape m_shape = null;
+  protected Fixture m_fixture = null;
 
-  protected void processBody(Body bd, ShapeDef sd){
-    m_shape = bd.createShape(sd);
-    m_shape.m_userData = this;
+  protected void processBody(Body b, FixtureDef fd){
+    m_fixture = b.createFixture(fd);
+    m_fixture.m_userData = this;
   }
 
   /**
@@ -102,38 +100,36 @@ public abstract class FBody extends FDrawable {
 
   public void addToWorld(FWorld world) {
     BodyDef bd = new BodyDef();
-    bd.isBullet = m_bullet;
+    bd.bullet = m_bullet;
 
     m_world = world;
     m_body = world.createBody(bd);
 
-    ShapeDef sd = getProcessedShapeDef();
-    if (sd != null) {
-        processBody(m_body, sd);
+    FixtureDef fd = getProcessedFixtureDef();
+    if (fd != null) {
+        processBody(m_body, fd);
     }
 
-    ArrayList bodies = getBodies();
-    ArrayList sds = getShapeDefs();
+    ArrayList<FBody> bodies = getBodies();
+    ArrayList<FixtureDef> fds = getFixtureDefs();
     // HACK: fix the compounds of polygon bodies for now, this should change with the new version of jBox2d
-    if (sds.size() != bodies.size()) {
-        for (int i=0; i<sds.size(); i++) {
-            sd = (ShapeDef)(sds.get(i));
-            if (sd != null) {
-                processBody(m_body, sd);
+    if (fds.size() != bodies.size()) {
+        for (FixtureDef f:fds) {
+            if (f != null) {
+                processBody(m_body, f);
             }
         }
     } else {
-        for (int i=0; i<sds.size(); i++) {
-            FBody b = (FBody)(bodies.get(i));
-            sd = (ShapeDef)(sds.get(i));
-            if (sd != null) {
-                b.processBody(m_body, sd);
+        for (int i=0; i<fds.size(); i++) {
+            fd = fds.get(i);
+            if (fd != null) {
+              bodies.get(i).processBody(m_body, fd);
             }
         }    
     }
 
     m_body.m_userData = this;
-    m_body.setXForm(m_position, m_angle);
+    m_body.setTransform(m_position, m_angle);
     m_body.setLinearVelocity(m_linearVelocity);
     m_body.setAngularVelocity(m_angularVelocity);
 
@@ -141,15 +137,15 @@ public abstract class FBody extends FDrawable {
     m_body.m_angularDamping = m_angularDamping;
 
     if (m_rotatable) {
-      m_body.m_flags &= ~m_body.e_fixedRotationFlag;
+      m_body.m_flags &= ~Body.e_fixedRotationFlag;
     }else{
-      m_body.m_flags |= m_body.e_fixedRotationFlag;
+      m_body.m_flags |= Body.e_fixedRotationFlag;
     }
     
     if (m_allowSleep) {
-      m_body.m_flags |= m_body.e_allowSleepFlag;
+      m_body.m_flags |= Body.e_autoSleepFlag;
     }else{
-      m_body.m_flags &= ~m_body.e_allowSleepFlag;
+      m_body.m_flags &= ~Body.e_autoSleepFlag;
     }
 
     m_body.setBullet(m_bullet);
@@ -157,7 +153,7 @@ public abstract class FBody extends FDrawable {
     m_body.applyForce(m_force, m_body.getWorldCenter());
     m_body.applyTorque(m_torque);
 
-    m_body.m_type = m_static ? m_body.e_staticType : m_body.e_dynamicType;
+    m_body.m_type = m_static ? BodyType.STATIC : BodyType.DYNAMIC;
     updateMass();
 
   }
@@ -170,7 +166,7 @@ public abstract class FBody extends FDrawable {
     // save the properties in case we must add the body again
     m_linearVelocity = b.m_body.getLinearVelocity();
     m_angularVelocity = b.m_body.getAngularVelocity();
-    m_position = b.m_body.getMemberXForm().position;
+    m_position = b.m_body.getPosition();
     m_angle = b.m_body.getAngle();    
 
     m_force = b.m_body.m_force;
@@ -185,7 +181,7 @@ public abstract class FBody extends FDrawable {
     // save the properties in case we must add the body again
     m_linearVelocity = m_body.getLinearVelocity();
     m_angularVelocity = m_body.getAngularVelocity();
-    m_position = m_body.getMemberXForm().position;
+    m_position = m_body.getPosition();
     m_angle = m_body.getAngle();    
 
     m_force = m_body.m_force;
@@ -209,16 +205,16 @@ public abstract class FBody extends FDrawable {
     m_world = null;
   }
 
-  protected ShapeDef getShapeDef() {
+  protected FixtureDef getFixtureDef() {
     return null;
   }
 
-  protected ShapeDef getTransformedShapeDef() {
-    return getShapeDef();
+  protected FixtureDef getTransformedFixtureDef() {
+    return getFixtureDef();
   }
 
-  protected ShapeDef getProcessedShapeDef() {
-    ShapeDef sd = getShapeDef();
+  protected FixtureDef getProcessedFixtureDef() {
+    FixtureDef sd = getFixtureDef();
     if (sd != null) {
         sd.isSensor = m_sensor;
         sd.filter.groupIndex = m_groupIndex;
@@ -228,22 +224,22 @@ public abstract class FBody extends FDrawable {
     return sd;
   }
 
-  protected ArrayList getShapeDefs() {
-    return new ArrayList();
+  protected ArrayList<FixtureDef> getFixtureDefs() {
+    return new ArrayList<FixtureDef>();
   }
 
-  protected ArrayList getBodies() {
-    return new ArrayList();
+  protected ArrayList<FBody> getBodies() {
+    return new ArrayList<FBody>();
   }
 
-  protected ShapeDef processShapeDef(ShapeDef sd) {
-    if (sd != null) {
-        sd.isSensor = m_sensor;
-        sd.filter.groupIndex = m_groupIndex;
-        sd.filter.maskBits = m_filterBits;
-        sd.filter.categoryBits = m_categoryBits;
+  protected FixtureDef processShapeDef(FixtureDef fd) {
+    if (fd != null) {
+        fd.isSensor = m_sensor;
+        fd.filter.groupIndex = m_groupIndex;
+        fd.filter.maskBits = m_filterBits;
+        fd.filter.categoryBits = m_categoryBits;
     }
-    return sd;
+    return fd;
   }
   
   protected void preDraw(PGraphics applet) {
@@ -315,7 +311,7 @@ public abstract class FBody extends FDrawable {
         applet.pushStyle();
         applet.stroke(120, 40);
         applet.noFill();
-        applet.rectMode(applet.CORNERS);
+        applet.rectMode(PApplet.CORNERS);
         
         AABB aabb = getAABB();
         Vec2 lower = Fisica.worldToScreen(aabb.lowerBound);
@@ -394,12 +390,12 @@ public abstract class FBody extends FDrawable {
     }
     
     AABB temp = new AABB();
-    XForm tempXForm = b.getXForm();
+    Transform tempTransform = b.getTransform();
     if (b != null) {
-        Shape ss = b.getShapeList();
+        Fixture fs = b.getFixtureList();
         
-        while (ss != null) {        
-            ss.computeAABB(temp, tempXForm);
+        for(int i=0;i<fs.m_proxyCount;++i){        
+            fs.m_shape.computeAABB(temp, tempTransform, i);
             
             if (first) {
                 result = new AABB(temp);
@@ -407,8 +403,6 @@ public abstract class FBody extends FDrawable {
             } else {
                 result = new AABB(Vec2.min(result.lowerBound, temp.lowerBound), Vec2.max(result.upperBound, temp.upperBound));
             }
-            
-            ss = ss.getNext();
         }
     }
     
@@ -425,13 +419,13 @@ public abstract class FBody extends FDrawable {
     }
 
     AABB temp = new AABB();
-    XForm tempXForm = b.getXForm();
-    tempXForm.setIdentity();
+    Transform tempTransform = b.getTransform();
+    tempTransform.setIdentity();
     if (b != null) {
-        Shape ss = b.getShapeList();
+        Fixture fs = b.getFixtureList();
         
-        while (ss != null) {        
-            ss.computeAABB(temp, tempXForm);
+        for(int i=0;i<fs.m_proxyCount;++i){        
+            fs.m_shape.computeAABB(temp, tempTransform, i);
             
             if (first) {
                 result = new AABB(temp);
@@ -439,8 +433,6 @@ public abstract class FBody extends FDrawable {
             } else {
                 result = new AABB(Vec2.min(result.lowerBound, temp.lowerBound), Vec2.max(result.upperBound, temp.upperBound));
             }
-            
-            ss = ss.getNext();
         }
     }
     
@@ -600,7 +592,7 @@ public abstract class FBody extends FDrawable {
     // TODO: check if this is what it's supposed to do
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      m_body.applyImpulse(Fisica.screenToWorld(fx, fy), m_body.getWorldCenter());
+      m_body.applyLinearImpulse(Fisica.screenToWorld(fx, fy), m_body.getWorldCenter(), true);
     }
 
     m_force.x += Fisica.screenToWorld(fx);
@@ -646,7 +638,27 @@ public abstract class FBody extends FDrawable {
   public void addImpulse( float fx, float fy, float px, float py ){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      m_body.applyImpulse(Fisica.screenToWorld(fx, fy), m_body.getWorldCenter().add(Fisica.screenToWorld(px, py)));
+      m_body.applyLinearImpulse(Fisica.screenToWorld(fx, fy), m_body.getWorldCenter().add(Fisica.screenToWorld(px, py)), true);
+    }
+
+    // FIXME: we must calculate the force and torque this force produces
+    //m_force.x += Fisica.screenToWorld(fx);
+    //m_force.y += Fisica.screenToWorld(fy);
+  }
+
+  /**
+   * Apply an angular impulse.
+   *
+   * @see #addTorque(float)
+   * @see #addForce(float,float,float,float)
+   *
+   * @param angle impulse the angular impulse in units of kg*m*m/s
+   *
+   */
+  public void addAngularImpulse( float angle){
+    // TODO: w2s (world 2 screen)
+    if (m_body != null) {
+      m_body.applyAngularImpulse(angle);
     }
 
     // FIXME: we must calculate the force and torque this force produces
@@ -706,7 +718,7 @@ public abstract class FBody extends FDrawable {
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
       m_body.setLinearVelocity( Fisica.screenToWorld(vx, vy) );
-      m_body.wakeUp();
+      m_body.setAwake(true);
     }
 
     m_linearVelocity = Fisica.screenToWorld(vx, vy);
@@ -722,7 +734,7 @@ public abstract class FBody extends FDrawable {
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
       m_body.setLinearVelocity( Fisica.screenToWorld(getVelocityX() + dvx, getVelocityY() + dvy) );
-      m_body.wakeUp();
+      m_body.setAwake(true);
     }
 
     m_linearVelocity = Fisica.screenToWorld(getVelocityX() + dvx, getVelocityY() + dvy);
@@ -738,7 +750,7 @@ public abstract class FBody extends FDrawable {
   public float getX(){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      return Fisica.worldToScreen(m_body.getMemberXForm().position).x;
+      return Fisica.worldToScreen(m_body.getPosition()).x;
     }
 
     return Fisica.worldToScreen(m_position).x;
@@ -754,7 +766,7 @@ public abstract class FBody extends FDrawable {
   public float getY(){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      return Fisica.worldToScreen(m_body.getMemberXForm().position).y;
+      return Fisica.worldToScreen(m_body.getPosition()).y;
     }
 
     return Fisica.worldToScreen(m_position).y;
@@ -769,7 +781,7 @@ public abstract class FBody extends FDrawable {
   public void setPosition( float x, float y ){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      m_body.setXForm(Fisica.screenToWorld(x, y), m_body.getAngle());
+      m_body.setTransform(Fisica.screenToWorld(x, y), m_body.getAngle());
     }
 
     m_position = Fisica.screenToWorld(x, y);
@@ -778,7 +790,7 @@ public abstract class FBody extends FDrawable {
   protected void setPosition( Vec2 position ){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      m_body.setXForm(position, m_body.getAngle());
+      m_body.setTransform(position, m_body.getAngle());
     }
 
     m_position = Fisica.screenToWorld(position);
@@ -793,7 +805,7 @@ public abstract class FBody extends FDrawable {
   public void adjustPosition( float dx, float dy ){
     // TODO: w2s (world 2 screen)
     if (m_body != null) {
-      m_body.setXForm(Fisica.screenToWorld(getX() + dx, getY() + dy), m_body.getAngle());
+      m_body.setTransform(Fisica.screenToWorld(getX() + dx, getY() + dy), m_body.getAngle());
     }
 
     m_position = Fisica.screenToWorld(getX() + dx, getY() + dy);
@@ -821,7 +833,7 @@ public abstract class FBody extends FDrawable {
    */
   public void setRotation( float w ){
     if (m_body != null) {
-      m_body.setXForm(m_body.getMemberXForm().position, w);
+      m_body.setTransform(m_body.getPosition(), w);
     }
 
     m_angle = w;
@@ -836,7 +848,7 @@ public abstract class FBody extends FDrawable {
    */
   public void adjustRotation( float dw ){
     if (m_body != null) {
-      m_body.setXForm(m_body.getMemberXForm().position, m_body.getAngle() + dw);
+      m_body.setTransform(m_body.getPosition(), m_body.getAngle() + dw);
     }
 
     m_angle += dw;
@@ -862,7 +874,7 @@ public abstract class FBody extends FDrawable {
    */
   public boolean isSleeping(){
     if (m_body != null) {
-      return m_body.isSleeping();
+      return !m_body.isAwake();
     }
 
     return m_isSleeping;
@@ -879,7 +891,7 @@ public abstract class FBody extends FDrawable {
         return;
     }
     
-    m_body.wakeUp();
+    m_body.setAwake(true);
   }
 
   /**
@@ -905,7 +917,7 @@ public abstract class FBody extends FDrawable {
   public void setAngularVelocity( float w ){
     if (m_body != null) {
       m_body.setAngularVelocity( w );
-      m_body.wakeUp();
+      m_body.setAwake(true);
     }
 
     m_angularVelocity = w;
@@ -921,7 +933,7 @@ public abstract class FBody extends FDrawable {
   public void adjustAngularVelocity( float dw ){
     if (m_body != null) {
       m_body.setAngularVelocity( m_body.getAngularVelocity() + dw );
-      m_body.wakeUp();
+      m_body.setAwake(true);
     }
 
     m_angularVelocity += dw;
@@ -1002,12 +1014,20 @@ public abstract class FBody extends FDrawable {
     }
 
     // Set the density of shapes
-    for (Shape s = m_body.getShapeList(); s != null; s = s.m_next) {
-      s.m_density = m_static ? 0.0f : m_density;
+    for (Fixture f = m_body.getFixtureList(); f != null; f = f.m_next) {
+      f.m_density = m_static ? 0.0f : m_density;
     }
 
     // Recalculate the body's mass
-    m_body.setMassFromShapes();
+    MassData md=new MassData();
+
+    m_fixture.getMassData(md);
+
+    m_body.setMassData(md);
+  }
+
+  public BodyType getBodyType(){
+    return m_body.getType();
   }
 
   /**
@@ -1018,8 +1038,8 @@ public abstract class FBody extends FDrawable {
   public void setSensor( boolean value ){
     if( m_body != null ) {
       // Set the density of shapes
-      for (Shape s = m_body.getShapeList(); s != null; s = s.m_next) {
-        s.m_isSensor = value;
+      for(Fixture f = m_body.getFixtureList(); f!=null; f=f.m_next){
+        f.m_isSensor=value;
       }
     }
 
@@ -1051,7 +1071,7 @@ public abstract class FBody extends FDrawable {
    */
   public void setStatic( boolean value ){
     if( m_body != null ) {
-      m_body.m_type = value ? m_body.e_staticType : m_body.e_dynamicType;
+      m_body.m_type = value ? BodyType.STATIC : BodyType.DYNAMIC;
     }
 
     m_static = value;
@@ -1079,7 +1099,7 @@ public abstract class FBody extends FDrawable {
    */
   public boolean isStatic(){
     if (m_body != null) {
-      return m_body.isStatic();
+      return m_body.getType()==BodyType.STATIC;
     }
 
     return m_static;
@@ -1105,8 +1125,8 @@ public abstract class FBody extends FDrawable {
    */
   public void setRestitution( float restitution ){
     if ( m_body != null ) {
-      for (Shape s = m_body.getShapeList(); s != null; s = s.m_next) {
-        s.setRestitution( restitution );
+      for (Fixture f = m_body.getFixtureList(); f != null; f = f.m_next) {
+        f.setRestitution( restitution );
       }
     }
 
@@ -1120,8 +1140,8 @@ public abstract class FBody extends FDrawable {
    */
   public void setFriction( float friction ){
     if ( m_body != null ) {
-      for (Shape s = m_body.getShapeList(); s != null; s = s.m_next) {
-        s.setFriction( friction );
+      for (Fixture f = m_body.getFixtureList(); f != null; f = f.m_next) {
+        f.setFriction( friction );
       }
     }
 
@@ -1137,9 +1157,9 @@ public abstract class FBody extends FDrawable {
     if ( m_body != null ) {
       // TODO: check this
       if (rotatable) {
-        m_body.m_flags &= ~m_body.e_fixedRotationFlag;
+        m_body.m_flags &= ~Body.e_fixedRotationFlag;
       }else{
-        m_body.m_flags |= m_body.e_fixedRotationFlag;
+        m_body.m_flags |= Body.e_fixedRotationFlag;
       }
     }
 
@@ -1155,10 +1175,10 @@ public abstract class FBody extends FDrawable {
     if ( m_body != null ) {
       // TODO: check this
       if (allowSleep) {
-        m_body.m_flags |= m_body.e_allowSleepFlag;
+        m_body.m_flags |= Body.e_autoSleepFlag;
       }else{
-        m_body.m_flags &= ~m_body.e_allowSleepFlag;
-        m_body.wakeUp();
+        m_body.m_flags &= ~Body.e_autoSleepFlag;
+        m_body.setAwake(true);
       }
     }
 
@@ -1170,17 +1190,14 @@ public abstract class FBody extends FDrawable {
    *
    * @return   list of bodies (ArrayList of FBody) touching the body
    */
-  public ArrayList getTouching() {
-    ArrayList result = new ArrayList();
+  public ArrayList<FBody> getTouching() {
+    ArrayList<FBody> result = new ArrayList<>();
     
     if (m_world == null) {
       return result;
     }
 
-    Collection contacts = m_world.m_contacts.values();
-    Iterator iter = contacts.iterator();
-    while (iter.hasNext()) {
-      FContact contact = (FContact)iter.next();
+    for (FContact contact:m_world.m_contacts.values()) {
       if (this == contact.getBody1()) {
         result.add(contact.getBody2());
       } else if (this == contact.getBody2()) {
@@ -1196,18 +1213,14 @@ public abstract class FBody extends FDrawable {
    *
    * @return   list of contacts (ArrayList of FContact) touching the body
    */
-  public ArrayList getContacts() {
-    ArrayList result = new ArrayList();
+  public ArrayList<FContact> getContacts() {
+    ArrayList<FContact> result = new ArrayList<>();
 
     if (m_world == null) {
       return result;
     }
     
-    Collection contacts = m_world.m_contacts.values();    
-    Iterator iter = contacts.iterator();
-    while (iter.hasNext()) {
-      FContact contact = (FContact)iter.next();
-      
+    for (FContact contact:m_world.m_contacts.values()) {
       if (this == contact.getBody1() ||
           this == contact.getBody2()) {
         result.add(contact);
@@ -1222,8 +1235,8 @@ public abstract class FBody extends FDrawable {
    *
    * @return    an ArrayList (of FJoint) connected to the body
    */
-  public ArrayList getJoints() {
-    ArrayList result = new ArrayList();
+  public ArrayList<FJoint> getJoints() {
+    ArrayList<FJoint> result = new ArrayList<>();
       
     if ( m_body != null ) {
       for (JointEdge jn = m_body.getJointList(); jn != null; jn = jn.next) {
@@ -1246,9 +1259,9 @@ public abstract class FBody extends FDrawable {
   public boolean isConnected(FBody other) {
     if ( m_body != null ) {
       for (JointEdge jn = m_body.getJointList(); jn != null; jn = jn.next) {
-        FBody b = (FBody)(jn.other.m_userData);
+        //FBody b = (FBody)(jn.other.m_userData);
         if (jn.other.m_userData == other) {
-          return (jn.joint.m_collideConnected == false);
+          return (jn.joint.getCollideConnected() == false);
         }
       }
     }
@@ -1272,9 +1285,8 @@ public abstract class FBody extends FDrawable {
       return v;
     }
 
-    XForm xf = new XForm();
-    xf.position.set(Fisica.screenToWorld(getX(), getY()));
-    xf.R.set(getRotation());
-    return XForm.mulTrans(xf, p);
+    Transform tf = new Transform();
+    tf.set(Fisica.screenToWorld(getX(), getY()),getRotation());
+    return Transform.mulTrans(tf, p);
   }
 }

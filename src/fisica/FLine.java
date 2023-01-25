@@ -48,7 +48,7 @@ public class FLine extends FBody {
   protected Vec2 m_start;
   protected Vec2 m_end;
 
-  protected ShapeDef getShapeDef() {
+  protected ShapeDef getFixtureDef() {
     EdgeChainDef pd = new EdgeChainDef();
 
     pd.addVertex(m_start);

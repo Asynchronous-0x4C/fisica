@@ -19,8 +19,6 @@
 
 package fisica;
 
-import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 
@@ -46,29 +44,24 @@ public class FBox extends FBody {
   protected float m_height;
   protected float m_width;
 
-  protected ShapeDef getShapeDef() {
-    PolygonDef pd = new PolygonDef();
-    pd.setAsBox(m_width/2.0f, m_height/2.0f);
-    pd.density = m_density;
-    pd.friction = m_friction;
-    pd.restitution = m_restitution;
-    pd.isSensor = m_sensor;
-    return pd;
+  protected FixtureDef getFixtureDef() {
+    PolygonShape ps = new PolygonShape();
+    ps.setAsBox(m_width*0.5f, m_height*0.5f);
+    FixtureDef fd= new FixtureDef();
+    fd.shape=ps;
+    fd.density = m_density;
+    fd.friction = m_friction;
+    fd.restitution = m_restitution;
+    fd.isSensor = m_sensor;
+    return fd;
   }
 
-  protected ShapeDef getTransformedShapeDef() {
-    PolygonDef pd = (PolygonDef)getShapeDef();
+  protected FixtureDef getTransformedFixtureDef() {
+    FixtureDef fd = getFixtureDef();
 
-    XForm xf = new XForm();
-    xf.R.set(-m_angle);
-    xf.position = Mat22.mul(xf.R, m_position.negate());
-    
-    for (int i=0; i<pd.vertices.size(); i++) {
-        Vec2 ver = (Vec2)pd.vertices.get(i);
-        XForm.mulTransToOut(xf, ver, ver);
-    }
+    ((PolygonShape)fd.shape).setAsBox(m_width*0.5f, m_height*0.5f, m_position, m_angle);
 
-    return pd;
+    return fd;
   }
 
   /**
