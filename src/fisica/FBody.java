@@ -1014,7 +1014,7 @@ public abstract class FBody extends FDrawable {
     }
 
     // Set the density of shapes
-    for (Fixture f = m_body.getFixtureList(); f != null; f = f.m_next) {
+    for (Fixture f = m_body.getFixtureList(); f != null; f = f.getNext()) {
       f.m_density = m_static ? 0.0f : m_density;
     }
 

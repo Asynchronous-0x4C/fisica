@@ -6,7 +6,7 @@ TODO:
 + Optimize by avoid creation of extra Vec2 instances
 + add functional interface to Shape and call
 + Shape->Fixture
-+ add addAngularImpulse
++ Add FChain.java
 
 DONE:
 + Add getJoints() on FBody
@@ -14,3 +14,4 @@ DONE:
 + Fix the tracking of Contacts
   - Keep copies of the contacts in the World
   - Handle contactresult
++ add addAngularImpulse

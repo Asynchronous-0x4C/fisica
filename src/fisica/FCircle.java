@@ -19,8 +19,6 @@
 
 package fisica;
 
-import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 
@@ -44,20 +42,22 @@ import processing.core.*;
 public class FCircle extends FBody {
   protected float m_size;
 
-  protected ShapeDef getFixtureDef() {
-    CircleDef pd = new CircleDef();
-    pd.radius = m_size/2.0f;
-    pd.density = m_density;
-    pd.friction = m_friction;
-    pd.restitution = m_restitution;
-    pd.isSensor = m_sensor;
-    return pd;
+  protected FixtureDef getFixtureDef() {
+    CircleShape cs = new CircleShape();
+    cs.m_radius = m_size/2.0f;
+    FixtureDef fd=new FixtureDef();
+    fd.shape=cs;
+    fd.density = m_density;
+    fd.friction = m_friction;
+    fd.restitution = m_restitution;
+    fd.isSensor = m_sensor;
+    return fd;
   }
 
-  protected ShapeDef getTransformedFixtureDef() {
-    CircleDef pd = (CircleDef)getFixtureDef();
-    pd.localPosition.set(m_position);
-    return pd;
+  protected FixtureDef getTransformedFixtureDef() {
+    FixtureDef fd = getFixtureDef();
+    ((CircleShape)fd.getShape()).m_p.set(m_position);
+    return fd;
   }
 
   /**

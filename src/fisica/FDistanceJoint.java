@@ -21,12 +21,7 @@ package fisica;
 
 import processing.core.*;
 
-import java.util.ArrayList;
-
 import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
-import org.jbox2d.collision.shapes.*;
-import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
 /**
@@ -51,15 +46,15 @@ public class FDistanceJoint extends FJoint {
       // TODO: in debug mode it should say something;
       return null;
     }
-    md.body1 = m_body1.m_body;
-    md.body2 = m_body2.m_body;
-    md.localAnchor1 = m_anchor1.clone();
-    md.localAnchor2 = m_anchor2.clone();
+    md.bodyA = m_body1.m_body;
+    md.bodyB = m_body2.m_body;
+    md.localAnchorA.set(m_anchor1.clone());
+    md.localAnchorB.set(m_anchor2.clone());
     md.length = Fisica.screenToWorld(m_length);
     md.frequencyHz = m_frequency;
     md.dampingRatio = m_damping;
-    m_body1.m_body.wakeUp();
-    m_body2.m_body.wakeUp();
+    m_body1.m_body.setAwake(true);
+    m_body2.m_body.setAwake(true);
 
     return md;
   }
@@ -90,7 +85,7 @@ public class FDistanceJoint extends FJoint {
    */
   public void setDamping(float damping) {
     if ( m_joint != null ) {
-      ((DistanceJoint)m_joint).m_dampingRatio = damping;
+      ((DistanceJoint)m_joint).setDampingRatio(damping);
     }
 
     m_damping = damping;
@@ -103,7 +98,7 @@ public class FDistanceJoint extends FJoint {
    */
   public void setFrequency(float frequency) {
     if ( m_joint != null ) {
-      ((DistanceJoint)m_joint).m_frequencyHz = frequency;
+      ((DistanceJoint)m_joint).setFrequency(frequency);
     }
 
     m_frequency = frequency;
@@ -135,7 +130,7 @@ public class FDistanceJoint extends FJoint {
    */
   public void setLength(float length) {
     if ( m_joint != null ) {
-      ((DistanceJoint)m_joint).m_length = Fisica.screenToWorld(length);
+      ((DistanceJoint)m_joint).setLength(Fisica.screenToWorld(length));
     }
 
     m_length = length;
@@ -150,7 +145,9 @@ public class FDistanceJoint extends FJoint {
    */
   public void setAnchor2(float x, float y) {
     if (m_joint != null) {
-      ((DistanceJoint)m_joint).getAnchor2().set(Fisica.screenToWorld(x), Fisica.screenToWorld(y));
+      Vec2 v=new Vec2();
+      ((DistanceJoint)m_joint).getAnchorB(v);
+      v.set(Fisica.screenToWorld(x), Fisica.screenToWorld(y));
     }
 
     m_anchor2 = Fisica.screenToWorld(x, y);
@@ -164,7 +161,9 @@ public class FDistanceJoint extends FJoint {
    */
   public void setAnchor1(float x, float y) {
     if (m_joint != null) {
-      ((DistanceJoint)m_joint).getAnchor1().set(Fisica.screenToWorld(x), Fisica.screenToWorld(y));
+      Vec2 v=new Vec2();
+      ((DistanceJoint)m_joint).getAnchorA(v);
+      v.set(Fisica.screenToWorld(x), Fisica.screenToWorld(y));
     }
 
     m_anchor1 = Fisica.screenToWorld(x, y);
@@ -177,7 +176,9 @@ public class FDistanceJoint extends FJoint {
    */
   public float getAnchor1X() {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getAnchor1()).x;
+      Vec2 v=new Vec2();
+      m_joint.getAnchorA(v);
+      return Fisica.worldToScreen(v).x;
     }
 
     return Fisica.worldToScreen(m_anchor1.x);
@@ -190,7 +191,9 @@ public class FDistanceJoint extends FJoint {
    */
   public float getAnchor1Y() {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getAnchor1()).y;
+      Vec2 v=new Vec2();
+      m_joint.getAnchorA(v);
+      return Fisica.worldToScreen(v).y;
     }
 
     return Fisica.worldToScreen(m_anchor1.y);
@@ -203,7 +206,9 @@ public class FDistanceJoint extends FJoint {
    */
   public float getAnchor2X() {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getAnchor2()).x;
+      Vec2 v=new Vec2();
+      m_joint.getAnchorB(v);
+      return Fisica.worldToScreen(v).x;
     }
 
     return Fisica.worldToScreen(m_anchor2.x);
@@ -216,7 +221,9 @@ public class FDistanceJoint extends FJoint {
    */
   public float getAnchor2Y() {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getAnchor2()).y;
+      Vec2 v=new Vec2();
+      m_joint.getAnchorB(v);
+      return Fisica.worldToScreen(v).y;
     }
 
     return Fisica.worldToScreen(m_anchor2.y);
@@ -244,8 +251,8 @@ public class FDistanceJoint extends FJoint {
 
         applet.translate(getAnchor1X(), getAnchor1Y());
         
-        float ang = Fisica.parent().atan2(getAnchor2Y()-getAnchor1Y(), getAnchor2X()-getAnchor1X());
-        float dist = Fisica.parent().dist(getAnchor1X(), getAnchor1Y(), getAnchor2X(), getAnchor2Y());
+        float ang = PApplet.atan2(getAnchor2Y()-getAnchor1Y(), getAnchor2X()-getAnchor1X());
+        float dist = PApplet.dist(getAnchor1X(), getAnchor1Y(), getAnchor2X(), getAnchor2Y());
         applet.rotate(ang);
     
         if (m_length>0) {
@@ -261,12 +268,12 @@ public class FDistanceJoint extends FJoint {
         
         float x, y;
         for (int i=0; i<numSpins; i++) {
-            x = Fisica.parent().map(i+1, 0, numSpins+1, 10, dist-10);
+            x = PApplet.map(i+1, 0, numSpins+1, 10, dist-10);
             y = ((i % 2)*2-1)*4;
             applet.vertex(x, y);
         }
         
-        x = Fisica.parent().map(numSpins+1, 0, numSpins+1, 10, dist-10);
+        x = PApplet.map(numSpins+1, 0, numSpins+1, 10, dist-10);
         applet.vertex(x, 0);
         applet.vertex(dist, 0);
         

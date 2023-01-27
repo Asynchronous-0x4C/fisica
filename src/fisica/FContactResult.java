@@ -20,8 +20,8 @@
 package fisica;
 
 import org.jbox2d.common.*;
+import org.jbox2d.callbacks.ContactImpulse;
 import org.jbox2d.collision.*;
-import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.contacts.*;
 
 /**
@@ -69,22 +69,22 @@ public class FContactResult {
   protected FBody m_body1;
   protected FBody m_body2;
 
-  protected float m_normalImpulse;
-  protected float m_tangentImpulse;
+  protected float[] m_normalImpulses;
+  protected float[] m_tangentImpulses;
 
   protected FContactID m_id;
 
-  protected FContactResult(ContactResult contactResult) {
-    m_position = new Vec2(contactResult.position);
-    m_normal = new Vec2(contactResult.normal);
+  protected FContactResult(Contact contact,ContactImpulse impulse) {
+    m_position = new Vec2(contact.m_manifold.localPoint);
+    m_normal = new Vec2(contact.m_manifold.localNormal);
 
-    m_body1 = (FBody)contactResult.shape1.getBody().getUserData();
-    m_body2 = (FBody)contactResult.shape2.getBody().getUserData();
+    m_body1 = (FBody)contact.getFixtureA().getBody().getUserData();
+    m_body2 = (FBody)contact.getFixtureB().getUserData();
 
-    m_normalImpulse = contactResult.normalImpulse;
-    m_tangentImpulse = contactResult.tangentImpulse;
+    m_normalImpulses = impulse.normalImpulses;
+    m_tangentImpulses = impulse.tangentImpulses;
 
-    m_id = new FContactID(new ContactID(contactResult.id), m_body1, m_body2);
+    m_id = new FContactID(new ContactID(contact.m_manifold.points[0].id), m_body1, m_body2);
   }
 
   /**
@@ -149,8 +149,8 @@ public class FContactResult {
    * @return the normal component of the contact's impulse
    * @see #getTangentImpulse
    */
-  public float getNormalImpulse() {
-    return Fisica.worldToScreen(m_normalImpulse);
+  public float[] getNormalImpulse() {
+    return Fisica.worldToScreen(m_normalImpulses);
   }
 
   /**
@@ -159,8 +159,8 @@ public class FContactResult {
    * @return the tangent component of the contact's impulse
    * @see #getNormalImpulse
    */
-  public float getTangentImpulse() {
-    return Fisica.worldToScreen(m_tangentImpulse);
+  public float[] getTangentImpulse() {
+    return Fisica.worldToScreen(m_tangentImpulses);
   }
 
   /**

@@ -21,7 +21,6 @@ package fisica;
 
 import org.jbox2d.common.*;
 import org.jbox2d.collision.*;
-import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.contacts.*;
 
@@ -76,33 +75,43 @@ import org.jbox2d.dynamics.contacts.*;
  *
  */
 public class FContact {
+  private final Contact m_contact;
   protected FBody m_body1;
   protected FBody m_body2;
-  protected Vec2 m_position;
+  protected Vec2 m_localPoint;
   protected Vec2 m_velocity;
-  protected Vec2 m_normal;
-  protected float m_separation;
+  protected Vec2 m_localNormal;
   protected float m_friction;
   protected float m_restitution;
 
   protected FContactID m_id;
 
-  protected FContact(ContactPoint contactPoint) {
-    m_position = new Vec2(contactPoint.position);
-    m_velocity = new Vec2(contactPoint.velocity);
-    m_normal = new Vec2(contactPoint.normal);
+  protected FContact(Contact contact) {
+    m_contact=contact;
+    Manifold manifold=contact.getManifold();
+    m_localPoint = new Vec2(manifold.localPoint);
+    m_localNormal = new Vec2(manifold.localNormal);
 
-    m_separation = contactPoint.separation;
-    m_friction = contactPoint.friction;
-    m_restitution = contactPoint.restitution;
+    m_friction = contact.m_friction;
+    m_restitution = contact.m_restitution;
 
-    Shape s1 = contactPoint.shape1;
-    Shape s2 = contactPoint.shape2;
+    Fixture s1 = contact.getFixtureA();
+    Fixture s2 = contact.getFixtureB();
 
     m_body1 = s1.m_userData != null ? (FBody)s1.m_userData : (FBody)s1.getBody().getUserData();
     m_body2 = s2.m_userData != null ? (FBody)s2.m_userData : (FBody)s2.getBody().getUserData();
 
-    m_id = new FContactID(new ContactID(contactPoint.id), m_body1, m_body2);
+    m_id = new FContactID(new ContactID(manifold.points[0].id), m_body1, m_body2);
+  }
+
+  /**
+   * WARNING: This method is internal only and may change someday.  If you are using this method please contact the developer since there should be a better way or we may add something to the library.
+   *
+   * @return the internal JBox2D contact
+   *
+   */
+  public Contact getBox2dContact(){
+    return m_contact;
   }
 
   /**
@@ -128,7 +137,7 @@ public class FContact {
    * @see #getY
    */
   public float getX() {
-    return Fisica.worldToScreen(m_position).x;
+    return Fisica.worldToScreen(m_localPoint).x;
   }
 
   /**
@@ -138,7 +147,7 @@ public class FContact {
    * @see #getX
    */
   public float getY() {
-    return Fisica.worldToScreen(m_position).y;
+    return Fisica.worldToScreen(m_localPoint).y;
   }
 
   /**
@@ -168,7 +177,7 @@ public class FContact {
    * @see #getNormalY
    */
   public float getNormalX() {
-    return Fisica.worldToScreen(m_normal).x;
+    return Fisica.worldToScreen(m_localNormal).x;
   }
 
   /**
@@ -178,16 +187,7 @@ public class FContact {
    * @see #getNormalX
    */
   public float getNormalY() {
-    return Fisica.worldToScreen(m_normal).y;
-  }
-
-  /**
-   * Get the separation between the bodies.
-   *
-   * @return a positive value means that the bodies have space between them, negative values means that the bodies have penetrated each other
-   */
-  public float getSeparation() {
-    return Fisica.worldToScreen(m_separation);
+    return Fisica.worldToScreen(m_localNormal).y;
   }
 
   /**

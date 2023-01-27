@@ -1,11 +1,14 @@
 package fisica;
 
+import org.jbox2d.callbacks.ContactImpulse;
+import org.jbox2d.collision.Manifold;
+
 public interface FContactListener {
-  public void contactStarted(FContact contact);
+  public void beginContact(FContact contact);
 
-  public void contactPersisted(FContact contact);
+  public void endContact(FContact contact);
 
-  public void contactEnded(FContact contact);
+  public void preSolve(FContact contact,Manifold manifold);
 
-  public void contactResult(FContactResult result);
+  public void postSolve(FContact result,ContactImpulse impulse);
 }

@@ -19,10 +19,7 @@
 
 package fisica;
 
-import org.jbox2d.common.*;
 import org.jbox2d.collision.*;
-import org.jbox2d.dynamics.*;
-import org.jbox2d.dynamics.contacts.*;
 
 class FContactID {
   protected ContactID m_id;
@@ -43,8 +40,8 @@ class FContactID {
     m_b2 = fid.m_b2;
   }
 
-  public int hashCode()
-  {
+  public int hashCode(){
+    //TODO:Verify that this method behaves correctly.
     int result = 0;
     
     int h1 = m_b1.hashCode();
@@ -58,10 +55,10 @@ class FContactID {
       result = HASH_PRIME * result + h1;
     }
 
-    result = HASH_PRIME * result + m_id.features.flip;
-    result = HASH_PRIME * result + m_id.features.incidentVertex;
-    result = HASH_PRIME * result + m_id.features.referenceEdge;
-    result = HASH_PRIME * result + m_id.features.incidentEdge;
+    result = HASH_PRIME * result + m_id.indexA;
+    result = HASH_PRIME * result + m_id.indexB;
+    result = HASH_PRIME * result + m_id.typeA;
+    result = HASH_PRIME * result + m_id.typeB;
 
     return result;
 
@@ -74,7 +71,8 @@ class FContactID {
   }
 
   public String toString() {
-    return m_id.features.toString();
+    final String s=m_id.indexA+","+m_id.indexB+","+m_id.typeA+","+m_id.typeB+",";
+    return s;
   }
 
   public boolean equals(Object obj)

@@ -19,6 +19,7 @@
 
 package fisica;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import processing.event.MouseEvent;
 
 import org.jbox2d.common.*;
 import org.jbox2d.collision.*;
-import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.contacts.*;
 import org.jbox2d.dynamics.joints.*;
@@ -104,6 +104,8 @@ public class FWorld extends World {
    */
   public FBox bottom;
 
+  private TimeStep copy_step;
+
   protected float m_topLeftX;
   protected float m_topLeftY;
   protected float m_bottomRightX;
@@ -116,7 +118,6 @@ public class FWorld extends World {
   protected float m_grabPositionY = 0.0f;
   protected int m_mouseButton = PConstants.LEFT;
   protected HashMap<FContactID,FContact> m_contacts;
-  protected ArrayList<FContactResult> m_contactResults;
 
   protected LinkedList<FWorldAction> m_actions;
 
@@ -160,19 +161,19 @@ public class FWorld extends World {
   
   
   /**
-   * Forward the contact events to the contactStarted(ContactPoint point),
-   * contactPersisted(ContactPoint point) and contactStopped(ContactPoint point)
+   * Forward the contact events to the beginContact(Contact contact),
+   * endContact(Contact contact) and contactStopped(ContactPoint point)
    * which may be implemented in the sketch.
    *
    */
   class ConcreteContactListener implements ContactListener {
-    public void add(ContactPoint point) {
-      FContact contact = new FContact(point);
-      m_world.m_contacts.put(contact.getId(), contact);
+    public void beginContact(Contact contact) {
+      FContact f_contact = new FContact(contact);
+      m_world.m_contacts.put(f_contact.getId(), f_contact);
       
       if (m_clientContactListener != null) {
         try {
-          m_clientContactListener.contactStarted(contact);
+          m_clientContactListener.beginContact(f_contact);
           return;
         } catch (Exception e) {
           System.err.println("Disabling contact listener because of an error.");
@@ -181,27 +182,26 @@ public class FWorld extends World {
         }
       }
 
-      if (m_world.m_contactStartedMethod == null) {
+      if (m_world.m_beginContactMethod == null) {
         return;
       }
 
       try {
-        m_world.m_contactStartedMethod.invoke(Fisica.parent(),
-                                              new Object[] { contact });
+        m_world.m_beginContactMethod.invoke(Fisica.parent(),f_contact);
       } catch (Exception e) {
         System.err.println("Disabling contactStarted(ContactPoint point) because of an error.");
         e.printStackTrace();
-        m_world.m_contactStartedMethod = null;
+        m_world.m_beginContactMethod = null;
       }
     }
 
-    public void persist(ContactPoint point) {
-      FContact contact = new FContact(point);
-      m_world.m_contacts.put(contact.getId(), contact);
+    public void endContact(Contact contact) {
+      FContact f_contact = new FContact(contact);
+      m_world.m_contacts.remove(f_contact.getId());
 
       if (m_clientContactListener != null) {
         try {
-          m_clientContactListener.contactPersisted(contact);
+          m_clientContactListener.endContact(f_contact);
           return;
         } catch (Exception e) {
           System.err.println("Disabling contact listener because of an error.");
@@ -210,27 +210,25 @@ public class FWorld extends World {
         }
       }
 
-      if (m_world.m_contactPersistedMethod == null) {
+      if (m_world.m_endContactMethod == null) {
         return;
       }
 
       try {
-        m_world.m_contactPersistedMethod.invoke(Fisica.parent(),
-                                                new Object[] { contact });
+        m_world.m_endContactMethod.invoke(Fisica.parent(),f_contact );
       } catch (Exception e) {
         System.err.println("Disabling contactPersisted(FContact point) because of an error.");
         e.printStackTrace();
-        m_world.m_contactPersistedMethod = null;
+        m_world.m_endContactMethod = null;
       }
     }
 
-    public void remove(ContactPoint point) {
+    public void preSolve(Contact point,Manifold manifold) {
       FContact contact = new FContact(point);
-      m_world.m_contacts.remove(contact.getId());
 
       if (m_clientContactListener != null) {
         try {
-          m_clientContactListener.contactEnded(contact);
+          m_clientContactListener.preSolve(contact,manifold);
           return;
         } catch (Exception e) {
           System.err.println("Disabling contact listener because of an error.");
@@ -239,29 +237,27 @@ public class FWorld extends World {
         }
       }
 
-      if (m_world.m_contactEndedMethod == null) {
+      if (m_world.m_preSolveMethod == null) {
         return;
       }
 
       try {
-        m_world.m_contactEndedMethod.invoke(Fisica.parent(),
-                                            new Object[] { contact });
+        m_world.m_preSolveMethod.invoke(Fisica.parent(),contact,manifold);
       } catch (Exception e) {
         System.err.println("Disabling contactEnded(FContact point) because of an error.");
         e.printStackTrace();
-        m_world.m_contactEndedMethod = null;
+        m_world.m_preSolveMethod = null;
       }
     }
 
     public FWorld m_world;
 
-    public void result(ContactResult point) {
-      FContactResult result = new FContactResult(point);
-      m_contactResults.add(result);
+    public void postSolve(Contact point,ContactImpulse impulse) {
+      FContact f_contact = new FContact(point);
 
       if (m_clientContactListener != null) {
         try {
-          m_clientContactListener.contactResult(result);
+          m_clientContactListener.postSolve(f_contact,impulse);
           return;
         } catch (Exception e) {
           System.err.println("Disabling contact listener because of an error.");
@@ -270,17 +266,16 @@ public class FWorld extends World {
         }
       }
       
-      if (m_world.m_contactResultMethod == null) {
+      if (m_world.m_postSolveMethod == null) {
         return;
       }
 
       try {
-        m_world.m_contactResultMethod.invoke(Fisica.parent(),
-                                            new Object[] { result });
+        m_world.m_postSolveMethod.invoke(Fisica.parent(),f_contact,impulse);
       } catch (Exception e) {
         System.err.println("Disabling contactResult(FContactResult result) because of an error.");
         e.printStackTrace();
-        m_world.m_contactResultMethod = null;
+        m_world.m_postSolveMethod = null;
       }
     }
   }
@@ -293,10 +288,10 @@ public class FWorld extends World {
    * {@link FContactListener}.
    */
   private FContactListener m_clientContactListener;
-  private Method m_contactStartedMethod;
-  private Method m_contactPersistedMethod;
-  private Method m_contactEndedMethod;
-  private Method m_contactResultMethod;
+  private Method m_beginContactMethod;
+  private Method m_endContactMethod;
+  private Method m_preSolveMethod;
+  private Method m_postSolveMethod;
 
   
   public void setContactListener(final FContactListener listener) {
@@ -418,33 +413,31 @@ public class FWorld extends World {
     // Get the contactStarted(), contactPersisted() and contactEnded()
     // methods from the sketch
     try {
-      m_contactStartedMethod =
-        Fisica.parent().getClass().getMethod("contactStarted",
+      m_beginContactMethod =
+        Fisica.parent().getClass().getMethod("beginContact",
                                              new Class[] { FContact.class });
     } catch (Exception e) {
       // no such method, or an error.. which is fine, just ignore
     }
 
     try {
-      m_contactPersistedMethod =
-        Fisica.parent().getClass().getMethod("contactPersisted",
+      m_endContactMethod =
+        Fisica.parent().getClass().getMethod("endContact",
                                              new Class[] { FContact.class });
     } catch (Exception e) {
       // no such method, or an error.. which is fine, just ignore
     }
 
     try {
-      m_contactEndedMethod =
-        Fisica.parent().getClass().getMethod("contactEnded",
-                                             new Class[] { FContact.class });
+      m_preSolveMethod =
+        Fisica.parent().getClass().getMethod("preSolve",FContact.class,Manifold.class);
     } catch (Exception e) {
       // no such method, or an error.. which is fine, just ignore
     }
 
     try {
-      m_contactResultMethod =
-        Fisica.parent().getClass().getMethod("contactResult",
-                                             new Class[] { FContactResult.class });
+      m_postSolveMethod =
+        Fisica.parent().getClass().getMethod("postSolve",FContactResult.class,ContactImpulse.class);
     } catch (Exception e) {
       // no such method, or an error.. which is fine, just ignore
     }
@@ -454,13 +447,19 @@ public class FWorld extends World {
     setContactListener(m_contactListener);
 
     m_contacts = new HashMap<>();
-    m_contactResults = new ArrayList<>();
     
     m_actions = new LinkedList<>();
 
     m_mouseJoint.setDrawable(false);
 
     setGravity(0, 200);
+
+    try{
+      Field f=World.class.getDeclaredField("step");
+      copy_step=(TimeStep)f.get(this);
+    }catch(Exception e){
+      e.printStackTrace();
+    }
   }
 
   public FWorld() {
@@ -838,7 +837,6 @@ public class FWorld extends World {
     processActions();
     
     //m_contacts.clear();
-    m_contactResults.clear();
 
     super.step( dt, iterationCount, iterationCount );
   }
@@ -854,9 +852,12 @@ public class FWorld extends World {
     processActions();
     
     //m_contacts.clear();
-    m_contactResults.clear();
 
     super.step( dt, velocityIterationCount, positionIterationCount );
+  }
+
+  public float getInv_dt(){
+    return copy_step.inv_dt;
   }
 
   /**
@@ -968,49 +969,34 @@ public class FWorld extends World {
   
   @Deprecated
   public int raycast(float x1, float y1, float x2, float y2, FBody[] bodies, int maxCount, boolean solidShapes) {
-    Segment segment = new Segment();
-    segment.p1.set(Fisica.screenToWorld(x1, y1));
-    segment.p2.set(Fisica.screenToWorld(x2, y2));
 
-    Object[] results = new Object[maxCount];
-    Shape[] shapes = new Shape[maxCount];
+    int[] count = {0};
 
-    int count = this.raycast(segment, shapes, maxCount, solidShapes, null);
-
-    for (int i = 0; i < count; ++i) {
-      Shape shape = (Shape)shapes[i];
-      Body shapeBody = shape.getBody();
-      results[i] = (FBody)(shapeBody.getUserData());
-    }
+    raycast((Fixture fixture,Vec2 point,Vec2 normal,float fraction)->{count[0]++;return 1;},(int index,Vec2 point,Vec2 normal,float fraction)->{return -1;},x1,x2,y1,y2);
     
-    return count;
+    return count[0];
   }
 
   @Deprecated
   public FBody raycastOne(float x1, float y1, float x2, float y2, FRaycastResult result, boolean solidShapes) {
-    Segment segment = new Segment();
-    segment.p1.set(Fisica.screenToWorld(x1, y1));
-    segment.p2.set(Fisica.screenToWorld(x2, y2));
+    Fixture[] ret={new Fixture()};
 
-    int maxCount = 1;
-    Shape[] shapes = new Shape[maxCount];
+    result.m_x1=x1;
+    result.m_x2=x2;
+    result.m_y1=y1;
+    result.m_y2=y2;
 
-    int count = raycast(segment, shapes, maxCount, solidShapes, null);
+    Vec2[] v={new Vec2()};
 
-    if(count==0)
-      return null;
+    float[] l={0};
 
-    assert(count==1);
+    raycast((Fixture fixture,Vec2 point,Vec2 normal,float fraction)->{l[0]=(point.x-x1)/(x2-x1);v[0]=normal;ret[0]=fixture;return 0;},(int index,Vec2 point,Vec2 normal,float fraction)->{return -1;},x1,x2,y1,y2);
 
-    RaycastResult temp = new RaycastResult();
-
-    //Redundantly do TestSegment a second time, as the previous one's results are inaccessible
-    shapes[0].testSegment(shapes[0].getBody().getTransform(), temp, segment, 1.0f);
-
-    result.set(x1, y1, x2, y2, temp);
+    result.m_lambda=l[0];
+    result.m_normal=v[0];
 
     //We already know it returns true
-    return (FBody)(shapes[0].getBody().getUserData());
+    return (FBody)(ret[0].getBody().getUserData());
   }
 
   public void raycast(RayCastCallback rc,ParticleRaycastCallback pc,float x1, float y1, float x2, float y2){

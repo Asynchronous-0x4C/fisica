@@ -23,7 +23,6 @@ import org.jbox2d.common.*;
 import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
-import org.jbox2d.util.nonconvex.*;
 
 import processing.core.*;
 
@@ -59,9 +58,9 @@ import java.util.ArrayList;
  * @see FLine
  */
 public class FPoly extends FBody {
-  protected Polygon m_polygon;
+  protected PolygonShape m_polygon;
   protected boolean m_closed;
-  protected ArrayList m_vertices;
+  protected ArrayList<Vec2> m_vertices;
   
   /**
    * Constructs a polygonal body that can be added to a world.  It creates an empty polygon, before adding the blob to the world use {@link #vertex(float,float) vertex} to define the shape of the polygon.
@@ -69,7 +68,7 @@ public class FPoly extends FBody {
   public FPoly(){
     super();
     m_closed = false;
-    m_vertices = new ArrayList();
+    m_vertices = new ArrayList<>();
   }
 
   /**
@@ -87,19 +86,20 @@ public class FPoly extends FBody {
     m_vertices.add(Fisica.screenToWorld(x, y));
   }
 
-  protected void processBody(Body bd, ShapeDef sd){
-    Polygon.decomposeConvexAndAddTo(m_polygon, bd, (PolygonDef)sd);
+  protected void processBody(Body bd, FixtureDef sd){
+    PolygonShape.decomposeConvexAndAddTo(m_polygon, bd, (PolygonDef)sd);
   }
 
-  protected ShapeDef getFixtureDef() {
-    PolygonDef pd = new PolygonDef();
+  protected FixtureDef getFixtureDef() {
+    FixtureDef pd = new FixtureDef();
     
-    m_vertices.add(new Vec2((Vec2)m_vertices.get(m_vertices.size()-1)));
+    m_vertices.add(new Vec2(m_vertices.get(m_vertices.size()-1)));
     m_closed = true;
 
     Vec2[] vertices = new Vec2[m_vertices.size()];
     m_vertices.toArray(vertices);
-    m_polygon = new Polygon(vertices);
+    m_polygon = new PolygonShape();
+    m_polygon.set(vertices,vertices.length);
     
     pd.density = m_density;
     pd.friction = m_friction;
@@ -108,16 +108,14 @@ public class FPoly extends FBody {
     return pd;
   }
   
-  protected ShapeDef getTransformedFixtureDef() {
-    PolygonDef pd = (PolygonDef)getFixtureDef();
+  protected FixtureDef getTransformedFixtureDef() {
+    FixtureDef pd = getFixtureDef();
 
-    XForm xf = new XForm();
-    xf.R.set(-m_angle);
-    xf.position = Mat22.mul(xf.R, m_position.negate());
+    Transform tf = new Transform();
+    tf.set(m_position, m_angle);
     
-    for (int i=0; i<pd.vertices.size(); i++) {
-        Vec2 ver = (Vec2)pd.vertices.get(i);
-        XForm.mulTransToOut(xf, ver, ver);
+    for (Vec2 ver:((PolygonShape)pd.getShape()).m_vertices) {
+        Transform.mulTransToOut(tf, ver, ver);
     }
 
     return pd;
@@ -152,23 +150,21 @@ public class FPoly extends FBody {
         applet.pushStyle();
         applet.stroke(120, 100);
         applet.fill(120, 30);
-        Shape ss = b.getShapeList();
-        
-        while (ss != null) {        
-            PolygonShape ps = (PolygonShape)ss;
-            Vec2[] vecs = ps.getVertices();
-            applet.beginShape();
-            for (int j=0; j<ps.getVertexCount(); j++) {
-            Vec2 v = Fisica.worldToScreen(vecs[j]);
-            applet.vertex(v.x, v.y);
-            }
-            applet.endShape(applet.CLOSE);
-            
-            Vec2 c = Fisica.worldToScreen(ps.getCentroid());
-            applet.ellipse(c.x, c.y, 2, 2);
-            
-            ss = ss.getNext();
+
+        for(Fixture fs=b.getFixtureList();fs!=null;fs=fs.getNext()){
+          PolygonShape ps = (PolygonShape)fs.getShape();
+          Vec2[] vecs = ps.getVertices();
+          applet.beginShape();
+          for (int j=0; j<ps.getVertexCount(); j++) {
+          Vec2 v = Fisica.worldToScreen(vecs[j]);
+          applet.vertex(v.x, v.y);
+          }
+          applet.endShape(PConstants.CLOSE);
+          
+          Vec2 c = Fisica.worldToScreen(ps.m_centroid);
+          applet.ellipse(c.x, c.y, 2, 2);
         }
+
         applet.popStyle();
     }
     

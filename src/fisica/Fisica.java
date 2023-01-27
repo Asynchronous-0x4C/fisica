@@ -102,6 +102,14 @@ public class Fisica implements PConstants{
   public static float worldToScreen( float a ) {
     return m_viewport.getWorldToScreen(a);
   }
+
+  public static float[] worldToScreen( float[] a ) {
+    float ret[]=new float[a.length];
+    for(int i=0;i<a.length;i++){
+      ret[i]=m_viewport.getWorldToScreen(a[i]);
+    }
+    return ret;
+  }
   
   /**
    * Exception thrown when the library has not been initialized.  The method {@link Fisica#init(PApplet)} must be called before any use of the library.

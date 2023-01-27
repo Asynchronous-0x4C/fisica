@@ -20,9 +20,8 @@
 package fisica;
 
 import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
-import org.jbox2d.dynamics.*;
-import org.jbox2d.dynamics.contacts.*;
+
+import processing.core.PApplet;
 
 /**
  * Represents the result of a casted ray.
@@ -114,7 +113,7 @@ public class FRaycastResult {
    * @see #getNormalY
    */
   public float getX() {
-    return Fisica.parent().lerp(m_x1, m_x2, m_lambda);
+    return PApplet.lerp(m_x1, m_x2, m_lambda);
   }
 
   /**
@@ -126,6 +125,6 @@ public class FRaycastResult {
    * @see #getNormalY
    */
   public float getY() {
-    return Fisica.parent().lerp(m_y1, m_y2, m_lambda);
+    return PApplet.lerp(m_y1, m_y2, m_lambda);
   }
 }

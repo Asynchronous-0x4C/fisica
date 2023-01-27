@@ -19,13 +19,7 @@
 
 package fisica;
 
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.ArrayList;
-
 import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
-import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.dynamics.joints.*;
 
@@ -122,7 +116,7 @@ public abstract class FJoint extends FDrawable {
    */
   public FBody getBody1() {
     if (m_joint != null) {
-      return (FBody)m_joint.m_body1.getUserData();
+      return (FBody)m_joint.getBodyA().getUserData();
     }
 
     return null;
@@ -134,7 +128,7 @@ public abstract class FJoint extends FDrawable {
    */
   public FBody getBody2() {
     if (m_joint != null) {
-      return (FBody)m_joint.m_body2.getUserData();
+      return (FBody)m_joint.getBodyB().getUserData();
     }
 
     return null;
@@ -143,23 +137,27 @@ public abstract class FJoint extends FDrawable {
   /** 
    * Sets whether the bodies connected by the joint should collide with each other. 
    *
+   * @deprecated The method removed in new version.
    * @param value  if {@code true} the bodies connected by this joint will be allowed to collide with each other
    */
   public void setCollideConnected(boolean value) {
-    if (m_joint != null) {
-      ((Joint)m_joint).m_collideConnected = value;
-    }
+    // if (m_joint != null) {
+    //   ((Joint)m_joint).m_collideConnected = value;
+    // }
 
-    m_collideConnected = value;
+    // m_collideConnected = value;
   }
 
   /**
    * Returns the horizontal component of the reaction force on the second body at the joint anchor.
+   * @param inv_dt FWorld.getInv_dt()
    * @return horizontal component of the reaction force
    */
-  public float getReactionForceX() {
+  public float getReactionForceX(float inv_dt) {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getReactionForce()).x;
+      Vec2 ret=new Vec2();
+      m_joint.getReactionForce(inv_dt,ret);
+      return Fisica.worldToScreen(ret).x;
     }
 
     return 0.0f;
@@ -167,11 +165,14 @@ public abstract class FJoint extends FDrawable {
 
   /** 
    * Returns the vertical component of the reaction force on the second body at the joint anchor.
+   * @param inv_dt FWorld.getInv_dt()
    * @return vertical component of the reaction force
    */
-  public float getReactionForceY() {
+  public float getReactionForceY(float inv_dt) {
     if (m_joint != null) {
-      return Fisica.worldToScreen(m_joint.getReactionForce()).y;
+      Vec2 ret=new Vec2();
+      m_joint.getReactionForce(inv_dt,ret);
+      return Fisica.worldToScreen(ret).y;
     }
 
     return 0.0f;
@@ -179,11 +180,12 @@ public abstract class FJoint extends FDrawable {
 
   /** 
    * Returns the reaction torque on the second body at the joint anchor.
+   * @param inv_dt FWorld.getInv_dt()
    * @return reaction torque
    */
-  public float getReactionTorque() {
+  public float getReactionTorque(float inv_dt) {
     if (m_joint != null) {
-      return m_joint.getReactionTorque();
+      return m_joint.getReactionTorque(inv_dt);
     }
 
     return 0.0f;

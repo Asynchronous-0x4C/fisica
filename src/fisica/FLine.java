@@ -20,13 +20,10 @@
 package fisica;
 
 import org.jbox2d.common.*;
-import org.jbox2d.collision.*;
 import org.jbox2d.collision.shapes.*;
 import org.jbox2d.dynamics.*;
 
 import processing.core.*;
-
-import java.util.ArrayList;
 
 /**
  * Represents a line body that can be added to a world.
@@ -48,19 +45,19 @@ public class FLine extends FBody {
   protected Vec2 m_start;
   protected Vec2 m_end;
 
-  protected ShapeDef getFixtureDef() {
-    EdgeChainDef pd = new EdgeChainDef();
+  protected FixtureDef getFixtureDef() {
+    EdgeShape es = new EdgeShape();
 
-    pd.addVertex(m_start);
-    pd.addVertex(m_end);
+    FixtureDef fd=new FixtureDef();
 
-    pd.setIsLoop(false);
+    es.set(m_start,m_end);
 
-    pd.density = m_density;
-    pd.friction = m_friction;
-    pd.restitution = m_restitution;
-    pd.isSensor = m_sensor;
-    return pd;
+    fd.shape = es;
+    fd.density = m_density;
+    fd.friction = m_friction;
+    fd.restitution = m_restitution;
+    fd.isSensor = m_sensor;
+    return fd;
   }
 
   /**
